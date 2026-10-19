@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const authRoutes = require('./routes/auth.route')
 
 
 const app = express();
@@ -20,11 +21,13 @@ app.use(rateLimit({
     legacyHeaders: false,
 }));
 
-app.use('/health', (req,res)=>{
+app.get('/health', (req,res)=>{
     res.status(200).json({
         success:true,
         message:"Task-Bridge is running successfully"
     });
-})
+});
+
+app.use('/api/auth', authRoutes);
 
 module.exports = app;
