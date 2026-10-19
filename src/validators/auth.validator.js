@@ -24,4 +24,14 @@ const registerSchema = z.object({
 
 });
 
-module.exports = {registerSchema}
+const loginSchema = z.object({
+    email:z.string().trim().email("please provide a valid email")
+    .transform((email)=> email.toLowerCase()),
+
+    password: z.string().min(1,"password is required")
+       
+});
+
+module.exports = {registerSchema,
+    loginSchema
+}

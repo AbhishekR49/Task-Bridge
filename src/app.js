@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth.route')
 
@@ -9,7 +10,8 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({
-    origin:"http://localhost:5173"
+    origin:"http://localhost:5173",
+    credentials:true
 }));
 
 app.use(express.json({limit:"1mb"}));
@@ -20,6 +22,8 @@ app.use(rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 }));
+
+app.use(cookieParser());
 
 app.get('/health', (req,res)=>{
     res.status(200).json({
