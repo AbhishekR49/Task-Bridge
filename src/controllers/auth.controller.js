@@ -118,7 +118,7 @@ const login = async(req, res, next) =>{
         }
 
         const expiresAt = new Date(
-            Date.now() + refreshDays*60*60*1000
+            Date.now() + refreshDays*24*60*60*1000
         );
 
         await Session.create({
@@ -152,4 +152,30 @@ const login = async(req, res, next) =>{
     }
 }
 
-module.exports = {register, login}
+const getMe = async(req, res, next)=>{
+    try{
+        const user = await User.findById(req.user.id);
+
+        if(!user){
+            return res.status(401).json({
+                success:false,
+                message:"User account is no longer exists"
+            });
+        }
+
+        return res.status(200).json({
+            success:true,
+            user:{
+                id:user._id,
+                name:user.name,
+                email:user.email,
+                role:user.role
+            }
+        });
+
+    }catch(error){
+        next(error);
+    }
+}
+
+module.exports = {register, login, getMe}
