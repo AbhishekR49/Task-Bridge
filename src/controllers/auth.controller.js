@@ -5,6 +5,31 @@ const crypto = require('node:crypto');
 const {registerSchema, loginSchema} = require("../validators/auth.validator");
 const Session = require("../models/Session");
 
+const hashedToken = (token) =>
+    crypto.createHash("sha256").update(token).digest('hex');
+
+const createAccessToken = (user)=>
+    jwt.sign(
+            {
+                sub: user._id.toString(),
+                role:user.role
+            },
+            process.env.JWT_ACCESS_SECRET,
+            {expiresIn: process.env.ACCESS_TOKEN_TTL || '15m'}
+        );
+
+const refreshDays = () =>
+  Number(process.env.REFRESH_TOKEN_DAYS || 7);
+
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  path: '/api/auth',
+});
+
+
+
 
 const register = async (req, res, next)=>{
     try{
@@ -178,4 +203,109 @@ const getMe = async(req, res, next)=>{
     }
 }
 
-module.exports = {register, login, getMe}
+const refresh = async(req, res, next)=>{
+    try{
+
+        const oldToken = req.cookies?.refreshToken;
+        if(!oldToken){
+            return res.status(401).json({
+                success:false,
+                message:"Refresh token is required."
+            });
+        }
+
+        const now = new Date();
+        const days = refreshDays();
+
+        if (!Number.isFinite(days) || days <= 0) {
+        throw new Error('REFRESH_TOKEN_DAYS must be a positive number');
+        }
+
+        const newToken = crypto.randomBytes(48).toString('base64url');
+        const newHash = hashedToken(newToken);
+        const newExpire = new Date(
+            now.getTime()+ days*24*60*60*1000
+        );
+
+        const session = await Session.findOneAndUpdate(
+            {
+                refreshTokenHash:hashedToken(oldToken),
+                revokedAt:null,
+                expiresAt:{$gt:now}
+            },
+            {
+               $set:{
+                  refreshTokenHash:newHash,
+                  expiresAt:newExpire
+               }
+            },
+            {new:true}
+        );
+
+        if(!session){
+            res.clearCookie('refreshToken', cookieOptions());
+
+            return res.status(401).json({
+                success:false,
+                message:"Invalid or expired refresh token"
+            });
+        }
+
+        const user = await User.findById(session.userId);
+        if(!user){
+            await Session.updateOne(
+                { _id: session._id, revokedAt: null },
+                { $set: { revokedAt: new Date() } }
+            );
+
+        res.clearCookie('refreshToken', cookieOptions());
+
+      return res.status(401).json({
+        success: false,
+        message: 'User account no longer exists',
+      });
+        }
+
+     res.cookie('refreshToken', newToken, {
+      ...cookieOptions(),
+      maxAge: days * 24 * 60 * 60 * 1000,
+    });
+    
+    return res.status(200).json({
+      success: true,
+      accessToken: createAccessToken(user),
+    });
+
+    }catch(error){
+        next(error);
+    }
+}
+
+const logout = async(req, res, next) =>{
+    try{
+        const token = req.cookies?.refreshToken;
+        if(token){
+           await Session.updateOne(
+            {
+                refreshTokenHash: hashedToken(token), revokedAt:null
+            },
+            {
+                $set:{
+                    revokedAt: new Date()
+                }
+            }
+           );
+        }
+
+        res.clearCookie("refreshToken", cookieOptions());
+        return res.status(200).json({
+            success:true,
+            message:"Log Out successfully.."
+        });
+
+    }catch(error){
+        next(error);
+    }
+}
+
+module.exports = {register, login, getMe, refresh, logout}
