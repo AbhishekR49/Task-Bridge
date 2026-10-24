@@ -37,7 +37,7 @@ const authenticate = async(req, res, next)=>{
   }
 }
 
-const authorization = (...allowedRoles)=>{
+const authorize = (...allowedRoles)=>{
     return (req, res, next)=>{
 
         if(!req.user){
@@ -57,4 +57,4 @@ const authorization = (...allowedRoles)=>{
         next();
     }
 }
-module.exports ={authenticate, authorization}
+module.exports ={authenticate, authorize}

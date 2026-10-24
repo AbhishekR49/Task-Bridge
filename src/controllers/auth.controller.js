@@ -30,7 +30,6 @@ const cookieOptions = () => ({
 
 
 
-
 const register = async (req, res, next)=>{
     try{
         const result = registerSchema.safeParse(req.body);
