@@ -182,7 +182,7 @@ const updateTask = async(req, res, next)=>{
 
     if(!task){
       
-      const existingTask = await Task.exists(id);
+      const existingTask = await Task.exists({_id:id});
       if(!existingTask){
         return res.status(404).json({
           success:false,
@@ -207,5 +207,52 @@ const updateTask = async(req, res, next)=>{
   }
 }
 
+const closeTask = async(req, res,next)=>{
+  try{
 
-module.exports = {createTask, getTasks, getTaskById, updateTask};
+    const {id} = req.params;
+     if(!mongoose.isValidObjectId(id)){
+      return res.status(400).json({
+        success:false,
+        message:"Invalid Tasd id"
+      });
+    }
+
+    const task = await Task.findOneAndUpdate(
+      {
+        _id:id,
+        posterId:req.user.id,
+        status:'open'
+      },{
+        $set:{status:'closed'},
+      },
+      {new:true, runValidators:true}
+    );
+
+    if(!task){
+      const existingTask = await Task.exists({_id: id});
+      
+      if(!existingTask){
+        return res.status(404).json({
+          success:false,
+          message:"Invalid Task id"
+        });
+      }
+
+      return res.status(403).json({
+        success:false,
+        message:"Invalid Task, not owened by you, no longer exists"
+      });
+    }
+
+    return res.status(200).json({
+      success:true,
+      message:"Task closed successfully."
+    })
+
+  }catch(error){
+    next(error);
+  }
+}
+
+module.exports = {createTask, getTasks, getTaskById, updateTask, closeTask};
