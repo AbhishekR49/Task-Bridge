@@ -31,7 +31,7 @@ const validateResume = async (req, res, next) => {
       });
     }
 
-    const { fileTypeFromBuffer } = await import("file-type");
+    // const { fileTypeFromBuffer } = await import("file-type");
     const detected = await fileTypeFromBuffer(req.file.buffer);
 
     if (

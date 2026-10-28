@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Task = require("../models/Task");
 const Application = require("../models/Application");
+const {uploadResumeToImageKit, deleteResumeFromImagekit} = require('../services/imagekit.service');
 
 const createApplication = async(req, res, next)=>{
     let uploadedResume;
@@ -92,7 +93,24 @@ const createApplication = async(req, res, next)=>{
 
 
     }catch(error){
+
+      if(uploadedResume){
+        try{
+          await deleteResumeFromImagekit(uploadedResume.storageKey)
+        }catch(cleanUpError){
+          console.error("failed to clean up uploaded Resume", cleanUpError.message);
+        }
+      }
+
+      if(error.code === 11000){
+        return res.status(409).json({
+          success:false,
+          message:"you already applied."
+        });
+      }
         next(error);
         
     }
 }
+
+module.exports = createApplication;

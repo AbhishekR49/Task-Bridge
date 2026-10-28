@@ -16,7 +16,7 @@ const applicationSchema = new mongoose.Schema({
         type:String,
         required:true,
         trim:true,
-        minlength:20,
+        minlength:10,
         maxlength:2000
     },
     resume:{
