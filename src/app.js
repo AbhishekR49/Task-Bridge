@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth.route')
 const taskRoutes = require('./routes/task.route')
 const applicationRoutes = require('./routes/application.route');
+const dashboardRoutes = require('./routes/dashboard.route');
 
 
 const app = express();
@@ -39,5 +40,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 
 app.use('/api/application', applicationRoutes);
+
+app.use('/api/dashboard', dashboardRoutes);
 
 module.exports = app;
