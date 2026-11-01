@@ -1,5 +1,9 @@
-const multer = require('multer');
-const { fileTypeFromBuffer } = require('file-type');
+const multer = require("multer");
+
+const fileTypeFromBuffer = async (...args) => {
+    const { fileTypeFromBuffer } = await import("file-type");
+    return fileTypeFromBuffer(...args);
+};
 
 const alloweTypes = ['application/pdf',
      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
