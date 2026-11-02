@@ -48,21 +48,21 @@ const challenges = [
 
 function FeaturedChallenges() {
   return (
-    <section className="bg-page py-20 sm:py-24">
+    <section className="bg-[#EFF6FF] py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
 
         {/* Section Header */}
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="max-w-2xl">
-            <span className="text-sm font-semibold uppercase tracking-wider text-green">
+            <span className="text-sm font-semibold uppercase tracking-wider text-emerald-600">
               Explore opportunities
             </span>
 
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-heading sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#172B4D] sm:text-4xl">
               Challenges worth solving
             </h2>
 
-            <p className="mt-4 text-base leading-7 text-body">
+            <p className="mt-4 text-base leading-7 text-slate-600">
               Work on practical engineering problems and demonstrate your
               skills beyond a resume.
             </p>
@@ -70,7 +70,7 @@ function FeaturedChallenges() {
 
           <Link
             to="/tasks"
-            className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-brand transition-colors hover:text-brand-hover"
+            className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
           >
             Browse all challenges
             <ArrowRight size={17} />
@@ -84,17 +84,22 @@ function FeaturedChallenges() {
 
             const iconStyle =
               challenge.accent === "green"
-                ? "bg-emerald-50 text-green"
-                : "bg-blue-50 text-brand";
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-blue-100 text-blue-700";
+
+            const difficultyStyle =
+              challenge.difficulty === "Advanced"
+                ? "bg-amber-50 text-amber-700 ring-1 ring-amber-100"
+                : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100";
 
             return (
               <article
                 key={challenge.id}
-                className="flex flex-col rounded-2xl border border-border bg-white p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/50"
+                className="flex flex-col rounded-2xl border border-blue-100 bg-white p-6 transition-all duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
               >
                 {/* Category */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted">
+                  <span className="text-xs font-semibold tracking-wide text-slate-500">
                     {challenge.category}
                   </span>
 
@@ -106,11 +111,11 @@ function FeaturedChallenges() {
                 </div>
 
                 {/* Title and Description */}
-                <h3 className="mt-5 text-lg font-semibold leading-7 text-heading">
+                <h3 className="mt-5 text-lg font-semibold leading-7 text-[#172B4D]">
                   {challenge.title}
                 </h3>
 
-                <p className="mt-3 flex-1 text-sm leading-6 text-body">
+                <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">
                   {challenge.description}
                 </p>
 
@@ -119,7 +124,7 @@ function FeaturedChallenges() {
                   {challenge.technologies.map((tech) => (
                     <span
                       key={tech}
-                      className="rounded-md bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-600"
+                      className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600"
                     >
                       {tech}
                     </span>
@@ -127,18 +132,14 @@ function FeaturedChallenges() {
                 </div>
 
                 {/* Metadata */}
-                <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      challenge.difficulty === "Advanced"
-                        ? "bg-amber-50 text-amber-700"
-                        : "bg-emerald-50 text-emerald-700"
-                    }`}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${difficultyStyle}`}
                   >
                     {challenge.difficulty}
                   </span>
 
-                  <span className="flex items-center gap-1.5 text-xs text-muted">
+                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
                     <Clock3 size={14} />
                     {challenge.deadline}
                   </span>
@@ -147,7 +148,7 @@ function FeaturedChallenges() {
                 {/* Action */}
                 <Link
                   to={`/tasks/${challenge.id}`}
-                  className="mt-5 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-semibold text-heading transition-colors hover:border-brand hover:bg-soft-blue hover:text-brand"
+                  className="mt-5 flex items-center justify-center gap-2 rounded-lg border border-blue-100 px-4 py-3 text-sm font-semibold text-blue-700 transition-all hover:border-blue-600 hover:bg-blue-50"
                 >
                   View challenge
                   <ArrowRight size={15} />

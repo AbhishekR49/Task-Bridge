@@ -4,7 +4,7 @@ import { BriefcaseBusiness } from "lucide-react";
 
 function Navbar() {
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-white">
+    <nav className="sticky top-0 z-50 border-b border-blue-100 bg-[#EFF6FF] text-[#1E293B]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
 
         {/* Logo */}
