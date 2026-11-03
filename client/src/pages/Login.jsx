@@ -12,6 +12,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+import { useAuth } from "../context/AuthContext";
+
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -23,6 +25,9 @@ function Login() {
 
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const{ login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,24 +60,43 @@ const validateForm = () => {
 
   return Object.keys(newErrors).length === 0;
 };
+    
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  setSuccessMessage("");
 
-    setSuccessMessage("");
+  const isValid = validateForm();
+  if (!isValid) return;
 
-    const isValid = validateForm();
+  try {
+    setIsLoading(true);
 
-    if (!isValid) return;
-
-    setSuccessMessage("Frontend validation successful!");
-
-    console.log("Validated login data:", {
-      email: formData.email,
-      password: formData.password,
-      rememberMe,
+    const response = await login({
+      email: formData.email.trim(),
+      password: formData.password
     });
-  };
+
+    setSuccessMessage(response.message);
+
+    console.log("Logged-in user:", response.user);
+
+  } catch (error) {
+    console.error("Login error:", error);
+    console.error("Backend response:", error.response?.data);
+
+    const response = error.response?.data;
+
+    setErrors({
+      email:
+        response?.message ||
+        "Login failed. Please check your credentials.",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-[#EAF1FB] px-3 py-3 sm:px-5 lg:flex lg:items-center lg:justify-center lg:py-4">
@@ -283,9 +307,10 @@ const validateForm = () => {
             {/* Submit */}
             <button
               type="submit"
+              disabled={isLoading }
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
-              Log in
+              {isLoading ? "Logging in...": "Login"}
               <ArrowRight size={18} />
             </button>
 

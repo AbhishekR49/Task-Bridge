@@ -12,6 +12,7 @@ import {
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
+import{ registerUser } from "../services/authService";
 
 function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,11 +23,12 @@ function Register() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "developer",
+    role: "applicant",
   });
 
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
 const handleChange = (e) => {
   const { name, value } = e.target;
@@ -40,7 +42,6 @@ const handleChange = (e) => {
     ...prev,
     [name]: "",
   }));
-
   setSuccessMessage("");
 };
 
@@ -68,26 +69,61 @@ const handleChange = (e) => {
   return Object.keys(newErrors).length === 0;
 };
 
-const handleSubmit = (e) => {
+
+const handleSubmit = async (e) => {
   e.preventDefault();
 
   setSuccessMessage("");
 
   const isValid = validateForm();
+  if (!isValid) return;
 
-  if (!isValid) {
-    return;
+  try {
+    setIsLoading(true);
+
+    const { confirmPassword, ...userData } = formData;
+
+    const response = await registerUser(userData);
+
+    setSuccessMessage(response.message);
+
+    setFormData({
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "applicant",
+    });
+
+  } catch (error) {
+  console.log("Registration error:", error);
+  console.log("Backend response:", error.response?.data);
+  console.log("Status:", error.response?.status);
+
+  const response = error.response?.data;
+
+  if (response?.errors) {
+    const backendErrors = {};
+
+    response.errors.forEach((item) => {
+      backendErrors[item.field] = item.message;
+    });
+
+    setErrors(backendErrors);
+  } else {
+    setErrors({
+      email:
+        response?.message ||
+        error.message ||
+        "Registration failed. Please try again.",
+    });
   }
+} finally {
+  setIsLoading(false);
+}
 
-  setSuccessMessage("Frontend validation successful!");
-
-  console.log("Validated form data:", {
-    name: formData.name,
-    email: formData.email,
-    password: formData.password,
-    role: formData.role,
-  });
 };
+
 
   return (
     <div  className="min-h-screen bg-[#EAF1FB] px-4 py-6 sm:px-6 lg:py-8">
@@ -261,11 +297,11 @@ const handleSubmit = (e) => {
                   onClick={() =>
                     setFormData((prev) => ({
                       ...prev,
-                      role: "developer",
+                      role: "applicant",
                     }))
                   }
                   className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
-                    formData.role === "developer"
+                    formData.role === "applicant"
                       ? "border-brand bg-soft-blue text-brand"
                       : "border-blue-100 bg-white/70 text-body hover:border-blue-300"
                   }`}
@@ -279,11 +315,11 @@ const handleSubmit = (e) => {
                   onClick={() =>
                     setFormData((prev) => ({
                       ...prev,
-                      role: "company",
+                      role: "poster",
                     }))
                   }
                   className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
-                    formData.role === "company"
+                    formData.role === "poster"
                       ? "border-green bg-soft-green text-green"
                       : "border-blue-100 bg-white/70 text-body hover:border-emerald-300"
                   }`}
@@ -404,9 +440,10 @@ const handleSubmit = (e) => {
             {/* Submit */}
             <button
               type="submit"
+              disabled={isLoading}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
-              Create account
+             {isLoading ? 'Creating account....': "Create Account"}
               <ArrowRight size={18} />
             </button>
 
