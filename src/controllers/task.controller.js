@@ -255,4 +255,86 @@ const closeTask = async(req, res,next)=>{
   }
 }
 
-module.exports = {createTask, getTasks, getTaskById, updateTask, closeTask};
+const completeTask = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid task ID",
+      });
+    }
+
+    // Only the owner can complete an in-progress task.
+    const task = await Task.findOneAndUpdate(
+      {
+        _id: id,
+        posterId: req.user.id,
+        status: "in_progress",
+      },
+      {
+        $set: { status: "completed" },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!task) {
+      const existingTask = await Task.findById(id)
+        .select("posterId status");
+
+      if (!existingTask) {
+        return res.status(404).json({
+          success: false,
+          message: "Task not found",
+        });
+      }
+
+      if (existingTask.posterId.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to complete this task",
+        });
+      }
+
+      return res.status(409).json({
+        success: false,
+        message: "Only in-progress tasks can be completed",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Task marked as completed successfully",
+      task: {
+        _id: task._id,
+        status: task.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMyTasks = async (req, res, next) => {
+  try {
+    const posterId = req.user.id;
+
+    const tasks = await Task.find({ posterId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Your tasks fetched successfully",
+      tasks,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {createTask, getTasks, getTaskById, updateTask, closeTask, getMyTasks, completeTask};

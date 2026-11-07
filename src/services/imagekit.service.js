@@ -17,7 +17,7 @@ const uploadResumeToImageKit = async(file)=>{
 
     const uploadFile =await imageKitClient.upload({
         file: file.buffer,
-        fileName:`${fileId}.${ file.mimetypes === 'application/pdf' ? 'pdf': 'docx'}` ,
+        fileName:`${fileId}.${ file.mimetype === 'application/pdf' ? 'pdf': 'docx'}` ,
 
         folder:"/task-bridge/resumes",
         useUniqueFileName:false,
@@ -36,4 +36,28 @@ const deleteResumeFromImagekit = async(fileId)=>{
     await imageKitClient.deleteFile(fileId);
 };
 
-module.exports ={ uploadResumeToImageKit, deleteResumeFromImagekit}
+
+const getResumeAccessUrl = async (fileId) => {
+  if (!fileId) {
+    throw new Error("Resume file ID is required");
+  }
+
+  // Retrieve file metadata using ImageKit's fileId.
+  const fileDetails = await imageKitClient.getFileDetails(fileId);
+
+  if (!fileDetails?.filePath) {
+    throw new Error("Resume file path not found");
+  }
+
+  // Generate a signed URL that expires in 5 minutes.
+  const url = imageKitClient.url({
+    path: fileDetails.filePath,
+    signed: true,
+    expireSeconds: 300
+  });
+
+  return url;
+};
+
+
+module.exports ={ uploadResumeToImageKit, deleteResumeFromImagekit, getResumeAccessUrl};

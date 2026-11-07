@@ -1,11 +1,10 @@
-
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const sessionSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
 
@@ -14,6 +13,19 @@ const sessionSchema = new mongoose.Schema(
       required: true,
       unique: true,
       select: false,
+    },
+
+    // Immediately previous refresh token
+    previousRefreshTokenHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    // When the previous token was rotated
+    previousTokenRotatedAt: {
+      type: Date,
+      default: null,
     },
 
     expiresAt: {
@@ -31,15 +43,13 @@ const sessionSchema = new mongoose.Schema(
   }
 );
 
-// Find all sessions belonging to a user
 sessionSchema.index({ userId: 1 });
 
-// Automatically delete expired sessions eventually
 sessionSchema.index(
   { expiresAt: 1 },
   { expireAfterSeconds: 0 }
 );
 
-const Session = mongoose.model('Session', sessionSchema);
+const Session = mongoose.model("Session", sessionSchema);
 
 module.exports = Session;

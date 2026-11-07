@@ -202,83 +202,150 @@ const getMe = async(req, res, next)=>{
     }
 }
 
-const refresh = async(req, res, next)=>{
-    try{
+const refresh = async (req, res, next) => {
+  try {
+    const oldToken = req.cookies?.refreshToken;
 
-        const oldToken = req.cookies?.refreshToken;
-        if(!oldToken){
-            return res.status(401).json({
-                success:false,
-                message:"Refresh token is required."
-            });
-        }
+    if (!oldToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token is required.",
+      });
+    }
 
-        const now = new Date();
-        const days = refreshDays();
+    const now = new Date();
+    const days = refreshDays();
 
-        if (!Number.isFinite(days) || days <= 0) {
-        throw new Error('REFRESH_TOKEN_DAYS must be a positive number');
-        }
+    if (!Number.isFinite(days) || days <= 0) {
+      throw new Error(
+        "REFRESH_TOKEN_DAYS must be a positive number"
+      );
+    }
 
-        const newToken = crypto.randomBytes(48).toString('base64url');
-        const newHash = hashedToken(newToken);
-        const newExpire = new Date(
-            now.getTime()+ days*24*60*60*1000
-        );
+    // Allow a short window for simultaneous requests.
+    const gracePeriodMs = 10 * 1000;
 
-        const session = await Session.findOneAndUpdate(
+    const oldHash = hashedToken(oldToken);
+
+    // Generate the next refresh token.
+    const newToken = crypto.randomBytes(48).toString("base64url");
+    const newHash = hashedToken(newToken);
+
+    const newExpire = new Date(
+      now.getTime() + days * 24 * 60 * 60 * 1000
+    );
+
+    // Atomic rotation: only one request can rotate this token.
+    const session = await Session.findOneAndUpdate(
+      {
+        refreshTokenHash: oldHash,
+        revokedAt: null,
+        expiresAt: { $gt: now },
+      },
+      {
+        $set: {
+          previousRefreshTokenHash: oldHash,
+          previousTokenRotatedAt: now,
+          refreshTokenHash: newHash,
+          expiresAt: newExpire,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    let activeSession = session;
+    let shouldSetCookie = Boolean(session);
+
+    // The current token was already rotated.
+    if (!activeSession) {
+      // Check whether this is a legitimate simultaneous request.
+      activeSession = await Session.findOne({
+        previousRefreshTokenHash: oldHash,
+        previousTokenRotatedAt: {
+          $gte: new Date(now.getTime() - gracePeriodMs),
+        },
+        revokedAt: null,
+        expiresAt: { $gt: now },
+      });
+
+      if (activeSession) {
+        // Do not rotate again. The first request has already
+        // rotated the shared browser cookie.
+        shouldSetCookie = false;
+      } else {
+        // Detect reuse of the immediately previous token
+        // outside the allowed grace period.
+        const reusedSession = await Session.findOne({
+          previousRefreshTokenHash: oldHash,
+          revokedAt: null,
+        });
+
+        if (reusedSession) {
+          await Session.updateOne(
             {
-                refreshTokenHash:hashedToken(oldToken),
-                revokedAt:null,
-                expiresAt:{$gt:now}
+              _id: reusedSession._id,
+              revokedAt: null,
             },
             {
-               $set:{
-                  refreshTokenHash:newHash,
-                  expiresAt:newExpire
-               }
-            },
-            {new:true}
-        );
-
-        if(!session){
-            res.clearCookie('refreshToken', cookieOptions());
-
-            return res.status(401).json({
-                success:false,
-                message:"Invalid or expired refresh token"
-            });
+              $set: {
+                revokedAt: new Date(),
+              },
+            }
+          );
         }
 
-        const user = await User.findById(session.userId);
-        if(!user){
-            await Session.updateOne(
-                { _id: session._id, revokedAt: null },
-                { $set: { revokedAt: new Date() } }
-            );
+        res.clearCookie("refreshToken", cookieOptions());
 
-        res.clearCookie('refreshToken', cookieOptions());
+        return res.status(401).json({
+          success: false,
+          message: "Invalid or expired refresh token.",
+        });
+      }
+    }
+
+    const user = await User.findById(activeSession.userId);
+
+    if (!user) {
+      await Session.updateOne(
+        {
+          _id: activeSession._id,
+          revokedAt: null,
+        },
+        {
+          $set: {
+            revokedAt: new Date(),
+          },
+        }
+      );
+
+      res.clearCookie("refreshToken", cookieOptions());
 
       return res.status(401).json({
         success: false,
-        message: 'User account no longer exists',
+        message: "User account no longer exists.",
       });
-        }
+    }
 
-     res.cookie('refreshToken', newToken, {
-      ...cookieOptions(),
-      maxAge: days * 24 * 60 * 60 * 1000,
-    });
-    
+    // Only the request that successfully rotated the token
+    // should send the new refresh-token cookie.
+    if (shouldSetCookie) {
+      res.cookie("refreshToken", newToken, {
+        ...cookieOptions(),
+        maxAge: days * 24 * 60 * 60 * 1000,
+      });
+    }
+
     return res.status(200).json({
       success: true,
       accessToken: createAccessToken(user),
     });
-
-    }catch(error){
-        next(error);
-    }
-}
+  } catch (error) {
+    next(error);
+  }
+};
 
 const logout = async(req, res, next) =>{
     try{

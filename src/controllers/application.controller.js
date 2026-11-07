@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Task = require("../models/Task");
 const Application = require("../models/Application");
-const {uploadResumeToImageKit, deleteResumeFromImagekit} = require('../services/imagekit.service');
+const {uploadResumeToImageKit, deleteResumeFromImagekit, getResumeAccessUrl} = require('../services/imagekit.service');
 const updateApplicationSchema = require("../validators/application.validator");
 
 const createApplication = async(req, res, next)=>{
@@ -362,9 +362,94 @@ const updateApplicationStatus = async (req, res, next) => {
     }
 };
 
+const getMyApplications = async (req, res, next) => {
+  try {
+    const applications = await Application.find({
+      applicantId: req.user.id,
+    })
+      .populate({
+        path: "taskId",
+        select: "title paymentAmount currency status posterId",
+        populate: {
+          path: "posterId",
+          select: "name",
+        },
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Your applications fetched successfully.",
+      applications,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+const getApplicationResume = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Validate application ID.
+    if (!mongoose.isValidObjectId(applicationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid application ID."
+      });
+    }
+
+    // Find application and retrieve only required resume details.
+    const application = await Application.findById(applicationId)
+      .select("taskId resume.storageKey resume.originalName")
+      .lean();
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found."
+      });
+    }
+
+    // Verify that the logged-in poster owns the task.
+    const task = await Task.findOne({
+      _id: application.taskId,
+      posterId: req.user.id
+    }).select("_id");
+
+    if (!task) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to access this resume."
+      });
+    }
+
+    // Generate temporary access URL.
+    const resumeUrl = await getResumeAccessUrl(
+      application.resume.storageKey
+    );
+
+    return res.status(200).json({
+      success: true,
+      resume: {
+        url: resumeUrl,
+        originalName: application.resume.originalName
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 
 module.exports = {createApplication,
   getTaskApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+    getMyApplications,
+    getApplicationResume
 };

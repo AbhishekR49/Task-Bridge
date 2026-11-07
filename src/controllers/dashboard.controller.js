@@ -2,62 +2,58 @@ const Application = require("../models/Application");
 const Task = require("../models/Task");
 const mongoose = require('mongoose');
 
-const getPosterDashboard = async(req, res, next)=>{
-    try{
+const getPosterDashboard = async (req, res, next) => {
+  try {
+    const posterId = new mongoose.Types.ObjectId(req.user.id);
 
-        const posterId = req.user.id;
-
-        const taskCount = await Task.aggregate([
-            // Include only Task created by this Poster
-            {
-                $match:{ posterId:new mongoose.Types.ObjectId(posterId)}
-            },{
-                $group:{               //count how many task belonging to each status
-                    _id:"$status",
-                    count:{$sum: 1}
-                }
-            }
-        ]);
-
-     // Convert the aggregation results into easy-to-use dashboard numbers.
-     const task = {
-        total:0,
-        open:0,
-        in_progress :0,
-        completed:0,
-        closed:0
-     }
-
-     for (const item of taskCount) {
-            task.total += item.count;
-
-            if (item._id === "open") task.open = item.count;
-            if (item._id === "in_progress") task.in_progress = item.count;
-            if (item._id === "completed") task.completed = item.count;
-            if (item._id === "closed") task.closed = item.count;
+    // Count tasks grouped by their status.
+    const taskCount = await Task.aggregate([
+      {
+        $match: { posterId }
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
         }
+      }
+    ]);
 
-    // Count all applications submitted to this poster's tasks.
-        const totalApplications = await Application.countDocuments({
-            taskId: {
-                $in: await Task.find({ posterId }).distinct("_id")
-            }
-        });
+    // Initialize all status counts to zero.
+    const task = {
+      total: 0,
+      open: 0,
+      in_progress: 0,
+      completed: 0,
+      closed: 0
+    };
 
-        // Send the dashboard statistics to the frontend.
-        return res.status(200).json({
-            success: true,
-            dashboard: {
-                task,
-                totalApplications
-            }
-        });
-
-
-    }catch(error){
-       next(error);
+    for (const item of taskCount) {
+      task.total += item.count;
+      task[item._id] = item.count;
     }
-}
+
+    // Get IDs of all tasks belonging to this poster.
+    const taskIds = await Task.distinct("_id", { posterId });
+
+    // Count applications submitted to those tasks.
+    const totalApplications = await Application.countDocuments({
+      taskId: { $in: taskIds }
+    });
+
+    return res.status(200).json({
+      success: true,
+      dashboard: {
+        task,
+        totalApplications
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 const getApplicantDashboard = async(req, res, next)=>{
     try{

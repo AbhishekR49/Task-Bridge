@@ -8,14 +8,27 @@ const taskRoutes = require('./routes/task.route')
 const applicationRoutes = require('./routes/application.route');
 const dashboardRoutes = require('./routes/dashboard.route');
 
-
 const app = express();
 
 app.use(helmet());
-app.use(cors({
-    origin:"http://localhost:5173",
-    credentials:true
-}));
+
+const allowedOrigins = (
+  process.env.CLIENT_ORIGINS || "http://localhost:5173"
+).split(",").map((origin) => origin.trim()).filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Requests without Origin are handled by the
+      // server; browser cookie endpoints have separate validation.
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json({limit:"1mb"}));
 
