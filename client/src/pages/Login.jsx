@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Mail,
   LockKeyhole,
@@ -28,6 +28,7 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const{ login } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,6 +81,8 @@ const handleSubmit = async (e) => {
     setSuccessMessage(response.message);
 
     console.log("Logged-in user:", response.user);
+
+    navigate("/tasks", { replace: true });
 
   } catch (error) {
     console.error("Login error:", error);
