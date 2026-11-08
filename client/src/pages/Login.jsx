@@ -82,7 +82,7 @@ const handleSubmit = async (e) => {
 
     console.log("Logged-in user:", response.user);
 
-    navigate("/tasks", { replace: true });
+    navigate("/", { replace: true });
 
   } catch (error) {
     console.error("Login error:", error);
