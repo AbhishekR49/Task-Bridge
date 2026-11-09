@@ -1,147 +1,188 @@
-# Task-Bridge
+# TaskBridge
 
-Task-Bridge is a task marketplace platform where task posters can publish paid tasks and applicants can apply by submitting a message and resume.
+**A full-stack platform connecting developers with real-world engineering challenges, opportunities, and rewards.**
 
-The project is being developed as a full-stack application using the MERN stack.
+TaskBridge helps companies, startups, and project posters publish engineering tasks while allowing developers and students to discover opportunities, submit applications, and demonstrate their skills through practical work.
+
+**Live Demo:** https://task-bridge-mu-nine.vercel.app/  
+**Backend API:** https://task-bridge-fwud.onrender.com  
+**Repository:** https://github.com/AbhishekR49/Task-Bridge
+
+---
 
 ## Features
 
-### Authentication and Authorization
-- User registration and login.
-- JWT-based access tokens and refresh-token rotation.
-- Secure password hashing with bcrypt.
-- Role-based authorization for applicants and posters.
-- Protected API endpoints.
-- Session management and logout.
+### Authentication & Authorization
+- User registration and login
+- JWT-based authentication
+- Access-token and refresh-token flow
+- Protected routes and role-based authorization
+- Separate Applicant and Poster experiences
 
 ### Task Management
-- Create, view, update, and close tasks.
-- Browse tasks with search, filtering, and pagination.
-- Track task statuses: `open`, `in_progress`, `completed`, and `closed`.
-- Restrict task modifications to the owning poster.
+- Posters can create, update, and manage engineering tasks
+- Public task exploration
+- Task status management: Open, In Progress, Completed, and Closed
+- Poster dashboard for managing published tasks
 
-### Applications
-- Applicants can apply to open tasks.
-- Resume uploads using ImageKit.
-- Posters can view applications for their tasks.
-- Posters can accept or reject pending applications.
-- Accepting an application automatically rejects other pending applications for that task.
-- Task status changes to `in_progress` when an application is accepted.
+### Application Management
+- Applicants can apply to tasks with a message and resume
+- Resume upload and validation
+- Applicants can track their applications
+- Posters can review applications and accept or reject candidates
+- Accepting an applicant updates the task workflow
 
-### Dashboards
-- **Poster dashboard:** Task counts by status and total applications received.
-- **Applicant dashboard:** Total applications and counts by pending, accepted, and rejected status.
-- Dashboard endpoints are protected by authentication and role-based authorization.
+### Additional Features
+- Role-specific dashboards and statistics
+- Secure resume access for task posters
+- ImageKit integration for file storage
+- API validation and centralized error handling
+- Security middleware, CORS configuration, and rate limiting
 
-### Security and Validation
-- Request validation using Zod.
-- HTTP security headers with Helmet.
-- API rate limiting.
-- MongoDB data modeling with Mongoose.
-- Centralized error handling.
+---
 
 ## Tech Stack
 
-**Backend**
-- Node.js
-- Express.js
-- MongoDB Atlas
-- Mongoose
-- JWT and bcrypt
-- Zod
-- Multer and ImageKit
-- Jest and Supertest (testing setup)
+| Category | Technologies |
+|---|---|
+| Frontend | React, JavaScript, Vite |
+| Styling | Tailwind CSS |
+| Routing | React Router |
+| HTTP Client | Axios |
+| Backend | Node.js, Express.js |
+| Database | MongoDB, Mongoose |
+| Authentication | JWT, bcrypt |
+| Validation | Zod |
+| File Storage | ImageKit |
+| Security | Helmet, CORS, express-rate-limit |
+| Deployment | Vercel, Render |
 
-**Frontend**
-- React
-- Tailwind CSS
+---
 
-The frontend is planned for the next development phase.
+## Application Workflow
 
-## API Endpoints
+1. A poster registers and creates an engineering task.
+2. Applicants browse available tasks.
+3. An applicant submits an application with a resume.
+4. The poster reviews applications and accepts or rejects candidates.
+5. When a candidate is accepted, the task moves to In Progress.
+6. The poster marks the task as Completed when the work is finished.
 
-All endpoints use the base URL `http://localhost:3000` during local development.
+---
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/health` | Health check |
-| POST | `/api/auth/...` | Authentication operations |
-| GET | `/api/tasks` | Browse tasks |
-| POST | `/api/tasks` | Create a task |
-| GET | `/api/tasks/:id` | Get task details |
-| PATCH | `/api/tasks/:id` | Update a task |
-| PATCH | `/api/tasks/:id/closed` | Close a task |
-| POST | `/api/applications/tasks/:id` | Submit an application with a resume |
-| GET | `/api/applications/tasks/:id` | View applications for a task |
-| PATCH | `/api/applications/:applicationId/status` | Accept or reject an application |
-| GET | `/api/dashboard/poster` | Get poster dashboard statistics |
-| GET | `/api/dashboard/applicant` | Get applicant dashboard statistics |
-
-Protected endpoints require an access token in the `Authorization` header:
-
-`Authorization: Bearer <access_token>`
-
-Application submission uses `multipart/form-data` with a `message` field and a `resume` file.
-
-Check the route files for the exact authentication endpoints and request formats.
-
-## Getting Started
+## Local Setup
 
 ### Prerequisites
 
-- Node.js and npm
-- MongoDB Atlas or another appropriately configured MongoDB deployment
-- An ImageKit account for resume uploads
+- Node.js
+- MongoDB database
+- ImageKit account
 
-### Installation
-
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/AbhishekR49/Task-Bridge.git
 cd Task-Bridge
 ```
 
-Install dependencies:
+### 2. Configure the backend
+
+Install backend dependencies from the project root:
 
 ```bash
 npm install
 ```
 
-Create a `.env` file in the project root and configure the environment variables required by the application.
+Create a `.env` file in the backend root directory:
 
-Keep all secrets out of GitHub. Use `.env.example` as a template, and never commit your actual `.env` file.
+```env
+PORT=3000
+NODE_ENV=development
+MONGODB_URI=your_mongodb_connection_string
 
-Start the development server:
+JWT_ACCESS_SECRET=your_jwt_secret
+ACCESS_TOKEN_TTL=15m
+REFRESH_TOKEN_DAYS=7
+
+CLIENT_ORIGINS=http://localhost:5173
+
+IK_URL=your_imagekit_url
+IK_PUBLIC_KEY=your_imagekit_public_key
+IK_PRIVATE_KEY=your_imagekit_private_key
+```
+
+Start the backend:
 
 ```bash
 npm run dev
 ```
 
-The server runs on port `3000` by default, unless configured otherwise.
+### 3. Configure the frontend
 
-### Available Scripts
+Open another terminal:
+
+```bash
+cd client
+npm install
+```
+
+Create `client/.env`:
+
+```env
+VITE_API_URL=http://localhost:3000/api
+```
+
+Start the frontend:
 
 ```bash
 npm run dev
-npm start
-npm test
 ```
 
-- `npm run dev` starts the development server.
-- `npm start` starts the server.
-- `npm test` runs the configured Jest test suite.
+The frontend should now be available at `http://localhost:5173`.
 
-## Current Development Status
+---
 
-- Core authentication and authorization implemented.
-- Task management APIs implemented.
-- Application submission and resume-upload workflow implemented.
-- Application acceptance and rejection workflow implemented.
-- Poster and applicant dashboard APIs implemented and manually tested.
-- Automated backend testing and additional security verification are next.
-- React frontend integration and deployment are planned.
+## API Overview
 
-## Project Goal
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/auth/register` | Register a user |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/refresh` | Refresh authentication |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/me` | Get authenticated user |
+| GET | `/api/tasks` | Explore tasks |
+| POST | `/api/tasks` | Create a task |
+| GET | `/api/tasks/my-tasks` | Get poster's tasks |
+| GET | `/api/tasks/:id` | Get task details |
+| PATCH | `/api/tasks/:id` | Update a task |
+| PATCH | `/api/tasks/:id/close` | Close a task |
+| PATCH | `/api/tasks/:id/complete` | Complete a task |
+| POST | `/api/application/task/:id` | Apply to a task |
+| GET | `/api/application/my-applications` | Get applicant's applications |
+| GET | `/api/dashboard` | Dashboard data |
 
-Build a functional, secure, and maintainable task marketplace that demonstrates practical backend engineering, authentication, file uploads, database operations, and full-stack development.
+**Note:** Some endpoints require authentication and specific user roles.
+
+---
+
+## Security Notes
+
+- Keep `.env` files out of version control.
+- Never expose private API keys or JWT secrets.
+- Configure production environment variables separately.
+- Resume files are accessed through an authorization-protected endpoint.
+
+---
+
+## Author
+
+**Abhishek Raghuwanshi**
+
+B.Tech Computer Science and Engineering
+
+- GitHub: https://github.com/AbhishekR49
+
+---
+
+*TaskBridge — Turning engineering challenges into opportunities.*
